@@ -18,6 +18,19 @@ const ShopContextProvider = (props) => {
     fetch('http://localhost:4000/allproducts')
     .then((response) => response.json())
     .then((data)=>setAll_Product(data))
+
+    if(localStorage.getItem('auth-token')){
+      fetch('http://localhost:4000/getcart', {
+        method:'POST',
+        headers:{
+          Accept:'application/form-data',
+          'auth-token': `${localStorage.getItem('auth-token')}`,
+          'Content-Type':'application/json',
+        },
+        body:""
+      }).then((response)=>response.json())
+      .then((data)=>setCartItems(data));
+    }
   },[])
 
   const addToCart = (itemId) => {
@@ -27,13 +40,13 @@ const ShopContextProvider = (props) => {
       fetch('http://localhost:4000/addtocart', {
         method: 'POST',
         headers: {
-          Accept: 'application/json',
+          Accept: 'application/form-data',
           'auth-token': `${localStorage.getItem('auth-token')}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ "itemId": itemId })
       })
-        .then((response) => response.json()) // Thêm dấu ngoặc ()
+        .then((response) => response.json()) 
         .then((data) => console.log(data))
         .catch((error) => console.error("Lỗi khi thêm vào giỏ hàng:", error));
     }
@@ -41,6 +54,21 @@ const ShopContextProvider = (props) => {
 
   const removeFromCart = (itemId) => {
     setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] - 1 }));
+    if(localStorage.getItem('auth-token')){
+      console.log(itemId);
+      fetch('http://localhost:4000/removefromcart', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/form-data',
+          'auth-token': `${localStorage.getItem('auth-token')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ "itemId": itemId })
+      })
+        .then((response) => response.json()) 
+        .then((data) => console.log(data))
+        .catch((error) => console.error("Lỗi khi thêm vào giỏ hàng:", error));
+    }
   };
 
   const getTotalCartAmount = () => {
