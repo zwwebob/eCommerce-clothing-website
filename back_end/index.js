@@ -7,6 +7,7 @@ const multer = require("multer");
 const path = require("path");
 const cors = require("cors");
 const { type } = require("os");
+const { error, log } = require("console");
 
 app.use(express.json());
 app.use(cors());
@@ -40,16 +41,17 @@ const upload = multer({ storage: storage });
 app.use('/images', express.static(path.join(__dirname, 'upload/images')));
 
 // API để upload ảnh
-app.post("/upload", upload.single('product'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ success: 0, message: "No file uploaded" });
+app.post("/upload", upload.array('product'), (req, res) => {
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ success: 0, message: "No files uploaded" });
     }
+
+    const imageUrls = req.files.map(file => `http://localhost:${port}/images/${file.filename}`);
     res.json({
         success: 1,
-        image_url: `http://localhost:${port}/images/${req.file.filename}`
+        image_urls: imageUrls
     });
 });
-
 
 const Product = mongoose.model("Product", {
     id:{
@@ -90,33 +92,80 @@ const Product = mongoose.model("Product", {
 
 
 
-app.post('/addproduct', async (req, res)=>{
-    let products = await Product.find({});
-    let id;
-    if(products.length>0){
-        let last_product_array = products.slice(-1);
-        let last_product = last_product_array[0];
-        id = last_product.id + 1;
+// API để upload ảnh và thêm sản phẩm
+app.post('/addproduct', upload.single('product'), async (req, res) => {
+    try {
+        let products = await Product.find({});
+        let id;
+
+        if (products.length > 0) {
+            let last_product = products[products.length - 1];
+            id = last_product.id + 1; // Tự động tăng `id`
+        } else {
+            id = 1; // Nếu là sản phẩm đầu tiên
+        }
+
+        // Kiểm tra xem file ảnh có được upload không
+        const imageUrl = req.file
+            ? `http://localhost:${port}/images/${req.file.filename}`
+            : ""; // Gán URL của ảnh hoặc chuỗi rỗng nếu không upload
+
+        // Tạo product mới
+        const product = new Product({
+            id: id,
+            name: req.body.name || "Unknown Product",
+            image: imageUrl,
+            category: req.body.category || "others",
+            new_price: req.body.new_price || 0,
+            old_price: req.body.old_price || 0,
+        });
+
+        // Lưu product vào database
+        await product.save();
+        console.log("Product saved:", product);
+
+        res.json({
+            success: true,
+            name: req.body.name,
+        });
+    } catch (error) {
+        console.error("Error adding product:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to add product",
+            error: error.message,
+        });
     }
-    else{
-        id=1;
+});
+
+
+app.post('/addAllProduct', async (req, res) => {
+    const products = req.body; // Mảng các sản phẩm từ yêu cầu POST
+
+    if (!Array.isArray(products) || products.length === 0) {
+        return res.status(400).json({ success: false, message: "Product list is empty or invalid" });
     }
-    const product = new Product ({
-        id: req.body.id,
-        name: req.body.name,
-        image: req.body.image,
-        category: req.body.category,
-        new_price: req.body.new_price,
-        old_price: req.body.old_price,
-    });
-    console.log(product);
-    await product.save();
-    console.log("Saved");
-    res.json({
-        success:true,
-        name:req.body.name,
-    })
-})
+
+    try {
+        // Sử dụng insertMany để thêm tất cả sản phẩm cùng một lúc
+        const savedProducts = await Product.insertMany(products);
+        console.log("All products added successfully");
+        
+        res.json({
+            success: true,
+            addedProducts: savedProducts.length,
+            message: "All products have been added successfully",
+        });
+    } catch (error) {
+        console.error("Error adding products:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to add products",
+            error: error.message,
+        });
+    }
+});
+
 
 app.post('/removeproduct', async (req, res)=>{
     await Product.findOneAndDelete({id:req.body.id});
@@ -131,6 +180,125 @@ app.get('/allproducts', async (req, res) => {
     let products = await Product.find({});
     console.log("All products fetched");
     res.send(products);
+})
+
+
+// Shema creating for User model 
+const Users = mongoose.model('Users', {
+    name:{
+        type:String,
+    },
+    email:{
+        type:String,
+        unique:true,
+    },
+    password:{
+        type:String,
+    },
+    cartData:{
+        type:Object,
+    },
+    date:{
+        type:Date,
+        default:Date.now,
+    }
+})
+
+// Creating endpoint for registering the user
+app.post('/signup', async (req, res) => {
+    let check = await Users.findOne({email:req.body.email});
+    if (check) {
+        return res.status(400).json({success:false, errors:"existing user found with same email address"});
+    }
+
+    let cart = {};
+    for (let i = 0; i < 300; i++) {
+        cart[i] = 0;
+    }
+    
+    const user = new Users({
+        name:req.body.username,
+        email:req.body.email,
+        password: req.body.password,
+        cartData: cart,
+    })
+
+    await user.save();
+
+    const data = {
+        user:{
+            id:user.id
+        }
+    }
+
+    const token = jwt.sign(data, 'secret_ecom');
+    res.json({success:true, token})
+
+})
+
+
+// creating endpoint for user login 
+app.post('/login', async (req, res) => {
+    let user = await Users.findOne({email:req.body.email});
+    if(user){
+        const passCompare = req.body.password === user.password;
+        if(passCompare) {
+            const data = {
+                user:{
+                    id:user.id
+                }
+            }
+            const token = jwt.sign(data, 'secret_ecom');
+            res.json({success:true, token});
+        }
+        else{
+            res.json({success:false, errors:"Wrong Password"});
+        }
+    }
+    else {
+        res.json({success:false, errors:"Wrong Email Id"});
+    }
+})
+
+// Creating endpoint for newcollection data
+app.get('/newcollection', async(req, res)=>{
+    let products = await Product.find({});
+    let newcollection = products.slice(1).slice(-8);
+    console.log("NewCollection Feiched");
+    res.send(newcollection);
+})
+
+app.get('/popularinwomen', async (req, res)=>{
+    let products = await Product.find({category:"women"});
+    let popular_in_women = products.slice(0,4);
+    console.log("Popular in women fetched");
+    res.send(popular_in_women);
+})
+
+// creating midelware to fetch user
+
+const fetchUser = async (req, res, next)=>{
+    const token = req.header('auth-token');
+    if (!token) {
+        res.status(401).send({errors:"Please authenticate using valid token"})
+    }
+    else {
+        try {
+            const data = jwt.verify(token, 'secret_ecom');
+            req.user = data.user;
+            next();
+        } catch (error) {
+            res.status(401).send({errors:"please authenticate using a valid token"})
+        }
+    }
+}
+
+// creating endpoint for adding products in cartdata
+app.post('/addtocart',fetchUser, async(req, res)=> {
+    let userData = await Users.findOne({_id:req.user.id});
+    userData.cartData[req.body.itemId] += 1;
+    await Users.findOneAndUpdate({_id:req.user.id}, {cartData:userData.cartData});
+    res.send("Added")
 })
 
 // Lắng nghe kết nối từ cổng đã chỉ định
