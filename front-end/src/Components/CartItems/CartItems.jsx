@@ -5,7 +5,7 @@ import axios from "axios";
 import remove_icon from "../Assets/cart_cross_icon.png";
 
 const CartItems = () => {
-  const { all_product, cartItems, removeFromCart, getTotalCartAmount } = useContext(ShopContext);
+  const { all_product, cartItems, removeFromCart, getTotalCartAmount, clearCart } = useContext(ShopContext);
 
   const handleCheckout = async () => {
     // Chuẩn bị dữ liệu để gửi
@@ -32,7 +32,9 @@ const CartItems = () => {
       if (response.data.success) {
         alert("Đặt hàng thành công!");
         console.log("Response:", response.data);
-        // Thực hiện reset giỏ hàng tại đây nếu cần
+
+        // Clear the cart after successful order
+        clearCart(); // This will reset the cartItems to an empty state
       } else {
         alert(`Đặt hàng thất bại: ${response.data.message}`);
       }
