@@ -1,37 +1,37 @@
 import React, { createContext, useEffect, useState } from "react";
 
 export const ShopContext = createContext(null);
+
 const getDefaultCart = () => {
   let cart = {};
-  for (let index = 0; index < 300+1; index++) {
+  for (let index = 0; index < 300 + 1; index++) {
     cart[index] = 0;
   }
   return cart;
 };
 
-
 const ShopContextProvider = (props) => {
   const [all_product, setAll_Product] = useState([]);
   const [cartItems, setCartItems] = useState(getDefaultCart());
 
-  useEffect(()=>{
+  useEffect(() => {
     fetch('http://localhost:4000/allproducts')
-    .then((response) => response.json())
-    .then((data)=>setAll_Product(data))
+      .then((response) => response.json())
+      .then((data) => setAll_Product(data));
 
-    if(localStorage.getItem('auth-token')){
+    if (localStorage.getItem('auth-token')) {
       fetch('http://localhost:4000/getcart', {
-        method:'POST',
-        headers:{
-          Accept:'application/form-data',
+        method: 'POST',
+        headers: {
+          Accept: 'application/form-data',
           'auth-token': `${localStorage.getItem('auth-token')}`,
-          'Content-Type':'application/json',
+          'Content-Type': 'application/json',
         },
-        body:""
-      }).then((response)=>response.json())
-      .then((data)=>setCartItems(data));
+        body: ""
+      }).then((response) => response.json())
+        .then((data) => setCartItems(data));
     }
-  },[])
+  }, []);
 
   const addToCart = (itemId) => {
     setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] + 1 }));
@@ -46,7 +46,7 @@ const ShopContextProvider = (props) => {
         },
         body: JSON.stringify({ "itemId": itemId })
       })
-        .then((response) => response.json()) 
+        .then((response) => response.json())
         .then((data) => console.log(data))
         .catch((error) => console.error("Lỗi khi thêm vào giỏ hàng:", error));
     }
@@ -54,7 +54,7 @@ const ShopContextProvider = (props) => {
 
   const removeFromCart = (itemId) => {
     setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] - 1 }));
-    if(localStorage.getItem('auth-token')){
+    if (localStorage.getItem('auth-token')) {
       console.log(itemId);
       fetch('http://localhost:4000/removefromcart', {
         method: 'POST',
@@ -65,7 +65,7 @@ const ShopContextProvider = (props) => {
         },
         body: JSON.stringify({ "itemId": itemId })
       })
-        .then((response) => response.json()) 
+        .then((response) => response.json())
         .then((data) => console.log(data))
         .catch((error) => console.error("Lỗi khi thêm vào giỏ hàng:", error));
     }
@@ -94,6 +94,25 @@ const ShopContextProvider = (props) => {
     return totalItem;
   };
 
+  // Clear cart logic
+  const clearCart = () => {
+    setCartItems(getDefaultCart()); // Reset to the default cart state
+    if (localStorage.getItem('auth-token')) {
+      fetch('http://localhost:4000/clearcart', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/form-data',
+          'auth-token': `${localStorage.getItem('auth-token')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
+      })
+        .then((response) => response.json())
+        .then((data) => console.log("Cart cleared:", data))
+        .catch((error) => console.error("Lỗi khi xóa giỏ hàng:", error));
+    }
+  };
+
   const contextValue = {
     all_product,
     cartItems,
@@ -101,6 +120,7 @@ const ShopContextProvider = (props) => {
     removeFromCart,
     getTotalCartAmount,
     getTotalCartItems,
+    clearCart, // Add clearCart to contextValue
   };
 
   return (

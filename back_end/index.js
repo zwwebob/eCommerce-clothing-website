@@ -185,55 +185,55 @@ app.get('/allproducts', async (req, res) => {
 
 // Shema creating for User model 
 const Users = mongoose.model('Users', {
-    name:{
-        type:String,
-    },
-    email:{
-        type:String,
-        unique:true,
-    },
-    password:{
-        type:String,
-    },
-    cartData:{
-        type:Object,
-    },
-    date:{
-        type:Date,
-        default:Date.now,
-    }
-})
+    name: { type: String, required: true },
+    email: { type: String, unique: true, required: true },
+    password: { type: String, required: true },
+    listOrders: [
+        {
+            cart: { type: Object, required: true }, // Danh sách sản phẩm trong giỏ hàng
+            totalPrice: { type: Number, required: true }, // Tổng giá trị đơn hàng
+            orderDate: { type: Date, default: Date.now }, // Ngày đặt hàng
+        }
+    ],
+    cartData: { type: Object },
+    date: { type: Date, default: Date.now },
+});
+
 
 // Creating endpoint for registering the user
 app.post('/signup', async (req, res) => {
-    let check = await Users.findOne({email:req.body.email});
-    if (check) {
-        return res.status(400).json({success:false, errors:"existing user found with same email address"});
-    }
-
-    let cart = {};
-    for (let i = 0; i < 300; i++) {
-        cart[i] = 0;
-    }
-    
-    const user = new Users({
-        name:req.body.username,
-        email:req.body.email,
-        password: req.body.password,
-        cartData: cart,
-    })
-
-    await user.save();
-
-    const data = {
-        user:{
-            id:user.id
+    try {
+        let check = await Users.findOne({ email: req.body.email });
+        if (check) {
+            return res.status(400).json({ success: false, errors: "Người dùng đã tồn tại với email này" });
         }
+
+        // Khởi tạo giỏ hàng
+        let cart = {};
+        for (let i = 0; i < 300; i++) {
+            cart[i] = 0;
+        }
+
+        // Tạo tài khoản người dùng
+        const user = new Users({
+            name: req.body.username,
+            email: req.body.email,
+            password: req.body.password,
+            cartData: cart,
+            listOrders: [], // Khởi tạo danh sách đơn hàng rỗng
+        });
+
+        await user.save();
+
+        const data = {
+            user: { id: user.id },
+        };
+
+        const token = jwt.sign(data, 'secret_ecom');
+        res.json({ success: true, token });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Đăng ký thất bại", error: error.message });
     }
-
-    const token = jwt.sign(data, 'secret_ecom');
-    res.json({success:true, token})
-
 })
 
 
@@ -317,6 +317,73 @@ app.post('/getcart', fetchUser, async (req, res) => {
     let userData = await Users.findOne({_id:req.user.id});
     res.json(userData.cartData);
 })
+
+app.get('/getUsers', async (req, res) => {
+    try {
+      const users = await Users.find({});
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ success: false, message: "Error fetching users", error: error.message });
+    }
+  });
+  
+// API để xóa người dùng
+app.delete('/removeuser', async (req, res) => {
+    const { id } = req.body; // Lấy id người dùng cần xóa
+    console.log("Id remove: ", id);
+    try {
+        // Kiểm tra người dùng có tồn tại trong cơ sở dữ liệu không
+        const userToDelete = await Users.findById(id);
+        if (!userToDelete) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Xóa người dùng
+        await Users.findByIdAndDelete(id);
+        res.json({ success: true, message: 'User removed successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error removing user', error: error.message });
+    }
+});
+
+app.post('/addOrder', fetchUser, async (req, res) => {
+    try {
+        const { cart, totalPrice } = req.body;
+
+        // Tìm người dùng
+        const user = await Users.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "Người dùng không tồn tại" });
+        }
+
+        // Kiểm tra nếu thông tin giỏ hàng hoặc tổng giá trị đơn hàng không hợp lệ
+        if (!cart || Object.keys(cart).length === 0 || totalPrice <= 0) {
+            return res.status(400).json({ success: false, message: "Thông tin giỏ hàng hoặc giá trị đơn hàng không hợp lệ" });
+        }
+
+        // Thêm đơn hàng mới vào `listOrders`
+        user.listOrders = user.listOrders || []; // Khởi tạo `listOrders` nếu chưa tồn tại
+        user.listOrders.push({
+            cart: cart,
+            totalPrice: totalPrice,
+            date: new Date(),
+        });
+
+        // Xóa giỏ hàng sau khi đặt hàng
+        user.cartData = {};
+        for (let i = 0; i < 300; i++) {
+            user.cartData[i] = 0;
+        }
+
+        // Lưu lại thay đổi
+        await user.save();
+        res.json({ success: true, message: "Đơn hàng đã được thêm thành công", listOrders: user.listOrders });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Thêm đơn hàng thất bại", error: error.message });
+    }
+});
+
+
 
 // Lắng nghe kết nối từ cổng đã chỉ định
 app.listen(port, (error) => {

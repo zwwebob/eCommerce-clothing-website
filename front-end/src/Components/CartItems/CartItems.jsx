@@ -1,10 +1,48 @@
 import React, { useContext } from "react";
 import "./CartItems.css";
 import { ShopContext } from "../../Context/ShopContext";
+import axios from "axios";
 import remove_icon from "../Assets/cart_cross_icon.png";
 
 const CartItems = () => {
-  const { all_product, cartItems, removeFromCart, getTotalCartAmount } = useContext(ShopContext);
+  const { all_product, cartItems, removeFromCart, getTotalCartAmount, clearCart } = useContext(ShopContext);
+
+  const handleCheckout = async () => {
+    // Chuẩn bị dữ liệu để gửi
+    const cartData = {};
+    all_product.forEach((product) => {
+      if (cartItems[product.id] > 0) {
+        cartData[product.id] = cartItems[product.id];
+      }
+    });
+
+    const requestData = {
+      cart: cartData,
+      totalPrice: getTotalCartAmount(),
+    };
+
+    try {
+      // Gửi yêu cầu POST tới API /addOrder
+      const response = await axios.post("http://localhost:4000/addOrder", requestData, {
+        headers: {
+          "auth-token": localStorage.getItem("auth-token"), // Token xác thực từ LocalStorage
+        },
+      });
+
+      if (response.data.success) {
+        alert("Đặt hàng thành công!");
+        console.log("Response:", response.data);
+
+        // Clear the cart after successful order
+        clearCart(); // This will reset the cartItems to an empty state
+      } else {
+        alert(`Đặt hàng thất bại: ${response.data.message}`);
+      }
+    } catch (error) {
+      console.error("Lỗi khi gửi đơn hàng:", error);
+      alert("Đặt hàng thất bại. Vui lòng thử lại sau.");
+    }
+  };
 
   return (
     <div className="cartitems">
@@ -20,7 +58,7 @@ const CartItems = () => {
       {all_product.map((e) => {
         if (cartItems[e.id] > 0) {
           return (
-            <div>
+            <div key={e.id}>
               <div className="cartitems-format cartitems-format-main">
                 <img src={e.image} alt="" className="carticon-product-icon" />
                 <p>{e.name}</p>
@@ -60,7 +98,7 @@ const CartItems = () => {
               <h3>${getTotalCartAmount()}</h3>
             </div>
           </div>
-          <button>PROCEED TO CHECKOUT</button>
+          <button onClick={handleCheckout}>PROCEED TO CHECKOUT</button>
         </div>
         <div className="cartitems-promocode">
           <p>If you have a promo code, Enter it here</p>
