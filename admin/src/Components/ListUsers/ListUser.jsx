@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import './ListUser.css';
+import cross_icon from '../../assets/cross_icon.png'
 
 const ListUser = () => {
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [searchName, setSearchName] = useState(""); 
+  const [searchEmail, setSearchEmail] = useState(""); 
 
   const fetchUsers = async () => {
     await fetch('http://localhost:4000/getUsers')
@@ -38,24 +42,55 @@ const ListUser = () => {
     fetchUsers();
   }, []);
 
+  useEffect(() => {
+    // Filter orders when either searchName or searchEmail changes
+    const filtered = users.filter((user) => {
+      const isNameMatch = user.name
+        .toLowerCase()
+        .includes(searchName.toLowerCase());
+      const isEmailMatch = user.email
+        .toLowerCase()
+        .includes(searchEmail.toLowerCase());
+      return isNameMatch && isEmailMatch;
+    });
+    setFilteredUsers(filtered);
+  }, [searchName, searchEmail, users]);
+
   return (
     <div className="list-user">
-      <h1>User List</h1>
+      <h1>All Users</h1>
+      <div className="search-container">
+        <input
+          className="search-box"
+          type="text"
+          placeholder="Search by Name"
+          value={searchName}
+          onChange={(e) => setSearchName(e.target.value)}
+        />
+
+        <input
+          className="search-box"
+          type="email"
+          placeholder="Search by Email"
+          value={searchEmail}
+          onChange={(e) => setSearchEmail(e.target.value)}
+        />
+      </div>
       <div className='listuser-format-main'>
         <p>Username</p>
         <p>Email</p>
         <p>Registration Date</p>
-        <p>Actions</p>
+        <p>Remove</p>
       </div>
 
       <div className="listuser-allusers">
         <hr />
-        {users.map((user, index) => (
-          <div key={index} className="listuser-format">
+        {filteredUsers.map((user, index) => (
+          <div key={index} className="listuser-format listuser-format-main">
             <p>{user.name}</p>
             <p>{user.email}</p>
             <p>{new Date(user.date).toLocaleDateString()}</p>
-            <button onClick={() => removeUser(user._id)}>Delete</button>
+            <img onClick={() => {removeUser(user.id)}} src={cross_icon} alt="" className="listuser-remove-icon" />
           </div>
         ))}
         <hr />

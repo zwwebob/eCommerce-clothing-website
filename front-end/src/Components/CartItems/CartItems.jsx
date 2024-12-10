@@ -30,17 +30,17 @@ const CartItems = () => {
       });
 
       if (response.data.success) {
-        alert("Đặt hàng thành công!");
+        alert("Order Successfully! Have a nice day");
         console.log("Response:", response.data);
 
         // Clear the cart after successful order
         clearCart(); // This will reset the cartItems to an empty state
       } else {
-        alert(`Đặt hàng thất bại: ${response.data.message}`);
+        alert(`Order failed: ${response.data.message}`);
       }
     } catch (error) {
-      console.error("Lỗi khi gửi đơn hàng:", error);
-      alert("Đặt hàng thất bại. Vui lòng thử lại sau.");
+      console.error("Error in sending order:", error);
+      alert("Order failed. Try to do it again");
     }
   };
 

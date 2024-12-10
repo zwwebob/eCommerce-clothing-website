@@ -1,5 +1,5 @@
 .cartitems {
-    margin: 100xp 170px;
+    margin: 100px 170px;
 }
 .cartitems hr {
     height: 3px;
@@ -96,7 +96,7 @@
         margin: 60px 50px;
     }
     .cartitems-format-main{
-        grid-template-columns: 0.5fr 3fr 0.5fr 0.5fr 0.5fr 0.5fr;
+        grid-template-columns: 0.5fr 2fr 0.5fr 0.5fr 0.5fr 0.5fr;
         gap: 20px;
         padding: 15px 0px;
         font-size: 15px;
@@ -124,14 +124,14 @@
         height: 45px;
         font-size: 13px;
     }
-    .carticon-promobox{
+    .cartitems-promobox{
         width: auto;
         max-width: 500px;
     }
-    .carticon-promobox input{
+    .cartitems-promobox input{
         width: 100%;
     }
-    .carticon-promobox button{
+    .cartitems-promobox button{
         width: 120px;
         margin-left: -125px;
     }
