@@ -18,17 +18,28 @@
     background: #f6f6f6;
     gap: 20px;
     cursor: pointer;
+    white-space: nowrap;
+}
+.order-icon{
+    width: 30px;
+    height: 30px;
 }
 @media(max-width: 800px) {
     .sidebar {
-        padding: 30px 0px;
+        padding: 20px 0px;
         flex-direction: row;
         width: 100%;
         max-width: none;
         height: auto;
         justify-content: center;
+        overflow-x: auto;
     }
     .sidebar-item {
         margin: 0;
+    }
+}
+@media(max-width: 500px) {
+    .sidebar {
+        justify-content: flex-start;
     }
 }

@@ -1,5 +1,5 @@
 import React, { createContext, useEffect, useState } from "react";
-
+import axios from "axios";
 export const ShopContext = createContext(null);
 
 const getDefaultCart = () => {
@@ -13,6 +13,7 @@ const getDefaultCart = () => {
 const ShopContextProvider = (props) => {
   const [all_product, setAll_Product] = useState([]);
   const [cartItems, setCartItems] = useState(getDefaultCart());
+  const [orderItems, setOrderItems] = useState([]);
 
   useEffect(() => {
     fetch('http://localhost:4000/allproducts')
@@ -31,6 +32,20 @@ const ShopContextProvider = (props) => {
       }).then((response) => response.json())
         .then((data) => setCartItems(data));
     }
+    const fetchOrderItems = async () => {
+      try {
+        const token = localStorage.getItem('auth-token');  // Assuming token is stored in localStorage
+        const orderResponse = await axios.get('http://localhost:4000/orderItems', {
+          headers: {
+            'auth-token': token,
+          },
+        });
+        setOrderItems(orderResponse.data.orderItems);
+      } catch (error) {
+        console.error("Error fetching order history", error);
+      } 
+    };
+    fetchOrderItems();
   }, []);
 
   const addToCart = (itemId) => {
@@ -67,7 +82,7 @@ const ShopContextProvider = (props) => {
       })
         .then((response) => response.json())
         .then((data) => console.log(data))
-        .catch((error) => console.error("Lỗi khi thêm vào giỏ hàng:", error));
+        .catch((error) => console.error("Error in removing from cart:", error));
     }
   };
 
@@ -116,11 +131,12 @@ const ShopContextProvider = (props) => {
   const contextValue = {
     all_product,
     cartItems,
+    orderItems,
     addToCart,
     removeFromCart,
     getTotalCartAmount,
     getTotalCartItems,
-    clearCart, // Add clearCart to contextValue
+    clearCart,
   };
 
   return (

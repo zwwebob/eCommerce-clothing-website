@@ -54,6 +54,14 @@ const Navbar = () => {
         >
           <Link style={{ textDecoration: "none" }} to='/kids'>Kids</Link>{menu === "kids" ? <hr /> : <></>}
         </li>
+        {localStorage.getItem('auth-token')
+          && <li
+        onClick={() => {
+          setMenu("orders");
+        }}
+        >
+          <Link style={{ textDecoration: "none" }} to='/orderhistory'>Orders</Link>{menu === "orders" ? <hr /> : <></>}
+        </li>}
       </ul>
       <div className="nav-login-cart">
         {localStorage.getItem('auth-token')

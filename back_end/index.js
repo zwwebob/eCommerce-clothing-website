@@ -311,7 +311,27 @@ app.post('/addtocart',fetchUser, async(req, res)=> {
     res.send("Added")
 })
 
-
+// creating endpoint for clearing the cart
+app.post('/clearcart', fetchUser, async (req, res) => {
+    try {
+      // Find the user by their ID
+      let userData = await Users.findOne({ _id: req.user.id });
+  
+      // Reset the cart to an empty object (or default cart structure)
+      userData.cartData = {}; // Clear the cartData
+  
+      // Update the user document in the database with the empty cart
+      await Users.findOneAndUpdate({ _id: req.user.id }, { cartData: userData.cartData });
+  
+      // Send a success response
+      res.json({ message: "Cart cleared successfully" });
+    } catch (error) {
+      // Handle any errors
+      console.error("Error clearing cart:", error);
+      res.status(500).json({ error: "Failed to clear cart" });
+    }
+  });
+  
 app.post('/getcart', fetchUser, async (req, res) => {
     console.log("GetCart");
     let userData = await Users.findOne({_id:req.user.id});
@@ -383,7 +403,45 @@ app.post('/addOrder', fetchUser, async (req, res) => {
     }
 });
 
+// Endpoint to get the user's order history
+app.get('/orderItems', fetchUser, async (req, res) => {
+    try {
+        const user = await Users.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
 
+        res.json({ success: true, orderItems: user.listOrders });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Error fetching order history", error: error.message });
+    }
+});
+
+app.get('/admin/allorders', async (req, res) => {
+    try {
+        const users = await Users.find({}); // get all users
+        const allOrders = [];
+
+        // get all orders
+        users.forEach(user => {
+            user.listOrders.forEach(order => {
+                allOrders.push({
+                    userId: user._id,
+                    name: user.name,
+                    email: user.email,
+                    orderDate: order.orderDate,
+                    totalPrice: order.totalPrice,
+                    cart: order.cart,
+                });
+            });
+        });
+
+        res.json({ success: true, orders: allOrders });
+    } catch (error) {
+        console.error("Error fetching orders:", error);
+        res.status(500).json({ success: false, message: "Error fetching orders" });
+    }
+});
 
 // Lắng nghe kết nối từ cổng đã chỉ định
 app.listen(port, (error) => {
