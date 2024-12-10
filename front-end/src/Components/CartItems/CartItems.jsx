@@ -40,7 +40,7 @@ const CartItems = () => {
       }
     } catch (error) {
       console.error("Error in sending order:", error);
-      alert("Order failed. Try to do it again");
+      alert("Order failed: Login first!");
     }
   };
 

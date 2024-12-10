@@ -46,7 +46,7 @@ app.post("/upload", upload.array('product'), (req, res) => {
         return res.status(400).json({ success: 0, message: "No files uploaded" });
     }
 
-    const imageUrls = req.files.map(file => `http://localhost:${port}/images/${file.filename}`);
+    const imageUrls = req.files.map(file => `https://ecommerce-clothing-website.onrender.com/images/${file.filename}`);
     res.json({
         success: 1,
         image_urls: imageUrls

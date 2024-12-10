@@ -1,41 +1,43 @@
-import React, { useEffect, useState } from 'react';
-import './ListUser.css';
-import cross_icon from '../../assets/cross_icon.png'
+import React, { useEffect, useState } from "react";
+import "./ListUser.css";
+import cross_icon from "../../assets/cross_icon.png";
 
 const ListUser = () => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
-  const [searchName, setSearchName] = useState(""); 
-  const [searchEmail, setSearchEmail] = useState(""); 
+  const [searchName, setSearchName] = useState("");
+  const [searchEmail, setSearchEmail] = useState("");
 
   const fetchUsers = async () => {
-    await fetch('http://localhost:4000/getUsers')
+    await fetch("https://ecommerce-clothing-website.onrender.com/getUsers")
       .then((res) => res.json())
-      .then((data) => { setUsers(data); });
+      .then((data) => {
+        setUsers(data);
+      });
   };
 
   const removeUser = async (userId) => {
     // Gửi yêu cầu DELETE
-    await fetch('http://localhost:4000/removeuser', {
-      method: 'DELETE',
+    await fetch("https://ecommerce-clothing-website.onrender.com/removeuser", {
+      method: "DELETE",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ id: userId }), 
+      body: JSON.stringify({ id: userId }),
     })
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.success) {
-        alert("User removed successfully!");
-        setUsers(users.filter((user) => user._id !== userId));
-      } else {
-        alert("Failed to remove user");
-      }
-    })
-    .catch((error) => {
-      console.error("Error removing user:", error);
-      alert("An error occurred while removing the user");
-    });
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          alert("User removed successfully!");
+          setUsers(users.filter((user) => user._id !== userId));
+        } else {
+          alert("Failed to remove user");
+        }
+      })
+      .catch((error) => {
+        console.error("Error removing user:", error);
+        alert("An error occurred while removing the user");
+      });
   };
 
   useEffect(() => {
@@ -76,7 +78,7 @@ const ListUser = () => {
           onChange={(e) => setSearchEmail(e.target.value)}
         />
       </div>
-      <div className='listuser-format-main'>
+      <div className="listuser-format-main">
         <p>Username</p>
         <p>Email</p>
         <p>Registration Date</p>
@@ -90,7 +92,16 @@ const ListUser = () => {
             <p>{user.name}</p>
             <p>{user.email}</p>
             <p>{new Date(user.date).toLocaleDateString()}</p>
-            <img onClick={() => {removeUser(user.id)}} src={cross_icon} alt="" className="listuser-remove-icon" />
+            <p>
+              <img
+                onClick={() => {
+                  removeUser(user.id);
+                }}
+                src={cross_icon}
+                alt=""
+                className="listuser-remove-icon"
+              />
+            </p>
           </div>
         ))}
         <hr />
