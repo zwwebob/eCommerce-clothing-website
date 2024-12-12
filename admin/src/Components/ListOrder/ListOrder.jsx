@@ -24,7 +24,7 @@ const ListOrder = () => {
   useEffect(() => {
     const fetchAllOrders = async () => {
       try {
-        const response = await fetch("http://localhost:4000/admin/allorders", {
+        const response = await fetch("https://ecommerce-clothing-website.onrender.com/admin/allorders", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

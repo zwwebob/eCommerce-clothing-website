@@ -29,6 +29,11 @@
   overflow-y: auto;
   width: 100%;
 }
+.orderitems-quantity{
+  width: 64px;
+  height: 50px;
+  border: 2px solid #fff;
+}
 .search-container {
     display: flex;
     align-items: center;

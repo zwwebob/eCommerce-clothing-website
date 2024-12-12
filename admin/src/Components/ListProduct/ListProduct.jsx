@@ -9,7 +9,7 @@ const ListProduct = () => {
   const [filteredProducts, setFilteredProducts] = useState([]);
 
   const fetchInfo = async () => {
-    await fetch("http://localhost:4000/allproducts")
+    await fetch("https://ecommerce-clothing-website.onrender.com/allproducts")
       .then((res) => res.json())
       .then((data) => {
         setAllProducts(data);
@@ -22,17 +22,21 @@ const ListProduct = () => {
 
   useEffect(() => {
     const filtered = allproducts.filter((product) => {
-      const isTitleMatch = product.name.toLowerCase().includes(searchTitle.toLowerCase());
-      const isCategoryMatch = searchCategory ? product.category === searchCategory : true; // Add category filtering
-  
+      const isTitleMatch = product.name
+        .toLowerCase()
+        .includes(searchTitle.toLowerCase());
+      const isCategoryMatch = searchCategory
+        ? product.category === searchCategory
+        : true; // Add category filtering
+
       return isTitleMatch && isCategoryMatch;
     });
-  
+
     setFilteredProducts(filtered);
   }, [searchTitle, searchCategory, allproducts]);
 
   const remove_product = async (id) => {
-    await fetch("http://localhost:4000/removeproduct", {
+    await fetch("https://ecommerce-clothing-website.onrender.com/removeproduct", {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -90,14 +94,16 @@ const ListProduct = () => {
             <p>${product.old_price}</p>
             <p>${product.new_price}</p>
             <p>{product.category}</p>
-            <img
-              onClick={() => {
-                remove_product(product.id);
-              }}
-              src={cross_icon}
-              alt=""
-              className="listproduct-remove-icon"
-            />
+            <p>
+              <img
+                onClick={() => {
+                  remove_product(product.id);
+                }}
+                src={cross_icon}
+                alt=""
+                className="listproduct-remove-icon"
+              />
+            </p>
           </div>
         ))}
         <hr />
