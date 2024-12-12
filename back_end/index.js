@@ -107,7 +107,7 @@ app.post('/addproduct', upload.single('product'), async (req, res) => {
 
         // Kiểm tra xem file ảnh có được upload không
         const imageUrl = req.file
-            ? `http://localhost:${port}/images/${req.file.filename}`
+            ? `https://ecommerce-clothing-website.onrender.com/images/${req.file.filename}`
             : ""; // Gán URL của ảnh hoặc chuỗi rỗng nếu không upload
 
         // Tạo product mới
