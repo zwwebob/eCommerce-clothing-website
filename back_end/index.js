@@ -6,6 +6,15 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const cors = require("cors");
+const cloudinary = require("cloudinary").v2;
+require('dotenv').config();
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 const { type } = require("os");
 const { error, log } = require("console");
 
@@ -13,7 +22,7 @@ app.use(express.json());
 app.use(cors());
 
 // Database Connection
-mongoose.connect("mongodb+srv://group_9:abc123456@cluster0.qdjvj.mongodb.net/", {
+mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 }).then(() => {
@@ -40,17 +49,31 @@ const upload = multer({ storage: storage });
 // Cấu hình để server có thể truy cập thư mục chứa ảnh đã upload
 app.use('/images', express.static(path.join(__dirname, 'upload/images')));
 
-// API để upload ảnh
-app.post("/upload", upload.array('product'), (req, res) => {
+app.post("/upload", upload.array('product'), async (req, res) => {
     if (!req.files || req.files.length === 0) {
         return res.status(400).json({ success: 0, message: "No files uploaded" });
     }
 
-    const imageUrls = req.files.map(file => `https://ecommerce-clothing-website.onrender.com/images/${file.filename}`);
-    res.json({
-        success: 1,
-        image_urls: imageUrls
-    });
+    try {
+        const imageUrls = await Promise.all(req.files.map(file => {
+            return new Promise((resolve, reject) => {
+                cloudinary.uploader.upload(file.path, (error, result) => {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        resolve(result.secure_url); // Lấy URL ảnh từ Cloudinary
+                    }
+                });
+            });
+        }));
+
+        res.json({
+            success: 1,
+            image_urls: imageUrls,
+        });
+    } catch (error) {
+        res.status(500).json({ success: 0, message: "Failed to upload image", error: error.message });
+    }
 });
 
 const Product = mongoose.model("Product", {
@@ -92,7 +115,6 @@ const Product = mongoose.model("Product", {
 
 
 
-// API để upload ảnh và thêm sản phẩm
 app.post('/addproduct', upload.single('product'), async (req, res) => {
     try {
         let products = await Product.find({});
@@ -106,9 +128,13 @@ app.post('/addproduct', upload.single('product'), async (req, res) => {
         }
 
         // Kiểm tra xem file ảnh có được upload không
-        const imageUrl = req.file
-            ? `https://ecommerce-clothing-website.onrender.com/images/${req.file.filename}`
-            : ""; // Gán URL của ảnh hoặc chuỗi rỗng nếu không upload
+        let imageUrl = "";
+
+        if (req.file) {
+            // Upload ảnh lên Cloudinary
+            const result = await cloudinary.uploader.upload(req.file.path);
+            imageUrl = result.secure_url; // Lấy URL của ảnh từ Cloudinary
+        }
 
         // Tạo product mới
         const product = new Product({

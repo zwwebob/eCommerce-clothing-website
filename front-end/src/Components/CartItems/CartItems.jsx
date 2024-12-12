@@ -23,7 +23,7 @@ const CartItems = () => {
 
     try {
       // Gửi yêu cầu POST tới API /addOrder
-      const response = await axios.post("http://localhost:4000/addOrder", requestData, {
+      const response = await axios.post("https://ecommerce-clothing-website.onrender.com/addOrder", requestData, {
         headers: {
           "auth-token": localStorage.getItem("auth-token"), // Token xác thực từ LocalStorage
         },
@@ -40,7 +40,7 @@ const CartItems = () => {
       }
     } catch (error) {
       console.error("Error in sending order:", error);
-      alert("Order failed: Login first!");
+      alert("Order failed!");
     }
   };
 
